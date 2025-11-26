@@ -1,0 +1,8 @@
+install.packages("reticulate")
+library(reticulate)
+
+# Import Python's anndata
+anndata <- import("anndata")
+ad <- anndata$read_h5ad("sample.h5ad")
+
+print(ad)

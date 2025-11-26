@@ -1,0 +1,28 @@
+{
+    "id": "B62D622C",
+    "path": "~/Desktop/UofT Files/Third Year/BCB330/h5ad_viewer.r",
+    "project_path": "h5ad_viewer.r",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1758017460756.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "1,0",
+        "scrollLine": "0",
+        "ignored_words": "anndata\n"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1758018393,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1758018393793,
+    "read_only": false,
+    "read_only_alternatives": []
+}

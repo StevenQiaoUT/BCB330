@@ -1,0 +1,12 @@
+{
+    "type": [
+        0,
+        1,
+        2
+    ],
+    "data": [
+        "> ",
+        "install.packages(\"reticulate\")",
+        "\u001BG3;Restarting R session...\u001Bg"
+    ]
+}

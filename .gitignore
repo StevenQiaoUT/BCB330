@@ -1,0 +1,6 @@
+*.h5ad
+*.html
+*_expression.json
+*.png
+__pycache__/
+.DS_Store

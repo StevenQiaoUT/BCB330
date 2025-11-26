@@ -1,0 +1,10 @@
+# Read the H5AD file
+ad_object <- anndata::read_h5ad("sample.h5ad")
+print("Hello world!")
+obs_data
+print(obs_data)
+# Access variable metadata (gene-level information)
+var_data <- ad_object$var
+hello
+print(obs_data)
+install.packages("reticulate")
