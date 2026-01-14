@@ -10,7 +10,7 @@ umap_df = pd.DataFrame(
     columns=['UMAP_1', 'UMAP_2']
 )
 
-umap_df['cell_type'] = adata.obs['label'].astype(str).values
+umap_df['cell_type'] = adata.obs['label_v2'].astype(str).values
 umap_df['gene_expression'] = adata[:, 'AT3G05727'].X.toarray().flatten()
 
 cell_types = sorted(umap_df['cell_type'].unique())
@@ -20,10 +20,23 @@ expr_min = umap_df['gene_expression'].min()
 expr_max = umap_df['gene_expression'].max()
 umap_df['expr_norm'] = (umap_df['gene_expression'] - expr_min) / (expr_max - expr_min)
 
+# Calculate statistics for each cell type
+cell_type_stats = {}
+for cell_type in cell_types:
+    ct_expr = umap_df[umap_df['cell_type'] == cell_type]['gene_expression']
+    cell_type_stats[cell_type] = {
+        'mean': ct_expr.mean(),
+        'std': ct_expr.std(),
+        'count': len(ct_expr)
+    }
+
 # Create figure
 fig = go.Figure()
 
 # Add base trace (all cells with gene expression color)
+all_mean = umap_df['gene_expression'].mean()
+all_std = umap_df['gene_expression'].std()
+
 fig.add_trace(go.Scattergl(
     x=umap_df['UMAP_1'],
     y=umap_df['UMAP_2'],
@@ -77,7 +90,7 @@ buttons = []
 # Button for "All Cells" (show only base trace)
 buttons.append(
     dict(
-        label="All Cells",
+        label=f"All Cells (μ={all_mean:.3f}, σ={all_std:.3f})",
         method="update",
         args=[{"visible": [True] + [False] * len(cell_types)},
               {"title": "Interactive UMAP - All Cells"}]
@@ -89,9 +102,11 @@ for i, cell_type in enumerate(cell_types):
     visible = [True] + [False] * len(cell_types)  # Base trace always visible
     visible[i + 1] = True  # Show this cell type trace
 
+    stats = cell_type_stats[cell_type]
+
     buttons.append(
         dict(
-            label=f"{cell_type} ({(umap_df['cell_type'] == cell_type).sum():,} cells)",
+            label=f"{cell_type} ({stats['count']:,} cells, μ={stats['mean']:.3f}, σ={stats['std']:.3f})",
             method="update",
             args=[{"visible": visible},
                   {"title": f"Interactive UMAP - Highlighting: {cell_type}"}]
@@ -126,3 +141,8 @@ fig.write_html('interactive_umap_dropdown.html')
 
 print(f"  Total cells: {len(umap_df):,}")
 print(f"  Cell types: {len(cell_types)}")
+print(f"\nGene Expression Statistics:")
+print(f"  All Cells: mean={all_mean:.3f}, std={all_std:.3f}")
+for cell_type in cell_types:
+    stats = cell_type_stats[cell_type]
+    print(f"  {cell_type}: mean={stats['mean']:.3f}, std={stats['std']:.3f}, n={stats['count']:,}")
