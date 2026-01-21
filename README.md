@@ -146,7 +146,7 @@ This creates `merged_grid.svg` with all cell types organized by tissue category 
 - **trichome**: Trichome cells
 - **palisade**: Palisade mesophyll
 - **spongy**: Spongy mesophyll
-- **vascular**: Vascular bundle (includes BS, xylem, phloem)
+- **vascular**: Vascular bundle (includes bundle sheath cells, xylem, phloem)
 
 ### File Format
 Individual SVG files follow the pattern: `{timepoint}_{cell_type}.svg`
