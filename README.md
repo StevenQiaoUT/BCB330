@@ -32,8 +32,7 @@ This project processes single-cell RNA-seq data from Arabidopsis leaf tissues ac
 
 ### R Packages
 ```r
-# Install required packages
-install.packages(c("ggplot2", "xml2", "dplyr"))
+install.packages(c("ggplot2", "xml2", "dplyr", "ggPlantmap", "SingleCellExperiment", "zellkonverter"))
 ```
 
 ### Python Packages
@@ -45,7 +44,7 @@ Required Python packages likely include:
 - pandas
 - numpy
 - scanpy
-- matplotlib
+- plotly
 - pathlib
 
 ## Installation
@@ -64,21 +63,21 @@ pip install -r requirements.txt
 ## Project Structure
 ```
 BCB330/
-├── .Rproj.user/              # RStudio project files
-├── ggplantmap_to_eplant/     # Conversion pipeline scripts
-│   ├── converter.py          # Main conversion script
-│   ├── icy_xml_to_ggplantmap_svg.R  # ICY XML to SVG converter
-│   ├── fourby3tree.py        # Grid layout generator
-│   └── conditioned/          # Processed SVG files
-├── *.xml                     # ICY XML cell annotation files
-│   ├── epidermal.xml
-│   ├── palisade.xml
-│   ├── spongy.xml
-│   ├── trichome.xml
-│   └── vascular.xml
-├── h5ad_viewer_*.r           # H5AD data viewers
-├── umap.py                   # UMAP visualization script
-├── timer.r                   # Performance timing utilities
+├── conversion_pipeline/
+│   ├── conditioned/
+│   ├── icy_outputs/                 
+│   ├── intermediates/
+│   ├── combine.py                 
+│   ├── icy_xml_to_ggplantmap_svg.r  
+│   ├── fourbythree.py        
+|   ├── get_coordinates.py        
+│   ├── gg_to_eplant_ungrouped.py
+│   └── group.py    
+├── h5ad_viewer_*.r
+├── h5ad_to_json.py          
+├── umap.py                   
+├── timer.r
+├── requirements.txt                 
 ├── BCB330 Proposal - Steven Qiao.pdf
 └── ePlant SVG and Expression Data Guide.pdf
 ```
