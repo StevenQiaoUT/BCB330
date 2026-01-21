@@ -135,10 +135,10 @@ This creates `merged_grid.svg` with all cell types organized by tissue category 
 ## File Naming Conventions
 
 ### Timepoints
-- **W0**: Well-watered control (Day 0)
-- **D0**: Drought stress initiation (Day 0)
-- **R15**: Recovery after 15 days
-- **W15**: Well-watered after 15 days
+- **W0**: Well-watered control
+- **D0**: Drought stress initiation
+- **R15**: Recovery
+- **W15**: Well-watered
 
 ### Cell Types
 - **guard**: Guard cells
@@ -161,7 +161,7 @@ Located in `conditioned/` directory, one file per cell type per timepoint.
 ### Composite Grid
 - **File**: `merged_grid.svg`
 - **Layout**: 4 columns (W0, D0, R15, W15) × 3 rows (Epidermal, Mesophyll, Vascular)
-- **Dimensions**: Configurable in `fourby3tree.py`
+- **Dimensions**: Configurable in `fourbythree.py`
 
 ### Visualization Features
 - Consistent stroke styling (1px, dark gray)
@@ -184,7 +184,7 @@ Located in `conditioned/` directory, one file per cell type per timepoint.
 
 ## References
 
-See `ePlant SVG and Expression Data Guide.pdf` for detailed specifications on SVG formatting requirements.
+See ggPlantMap ICY guide (https://github.com/leonardojo/ggPlantmap/blob/main/guides/TutorialforXMLfile.pdf) for detailed specifications on ICY XML formation.
 
 ## License
 
