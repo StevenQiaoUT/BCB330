@@ -134,32 +134,32 @@ source("icy_xml_to_ggplantmap_svg.r")
 ```
 
 This generates individual SVG files for each cell type. The process involves first converting the ICY XML into ggPlantmap. Afterwards, ggPlantmap gets converted to ggPlantmap SVG
-- Program Input: conversion_pipeline/icy_outputs/*.xml
-- Program Output: conversion_pipeline/intermediates/*_output.svg
+- Program Input: ```conversion_pipeline/icy_outputs/*.xml```
+- Program Output: ```conversion_pipeline/intermediates/*_output.svg```
 
 ### Step 3: Convert from ggPlantmap SVG to ePlant SVG Format
 ```
 gg_to_ePlant_ungrouped.py
 ```
 This step is responsible for rearranging the SVG drawing structure so that it is compatible with ePlant.
-- Program Input: conversion_pipeline/intermediates/*_output.svg
-- Program Output: conversion_pipeline/intermediates/*_eplant_format.svg
+- Program Input: ```conversion_pipeline/intermediates/*_output.svg```
+- Program Output: ```conversion_pipeline/intermediates/*_eplant_format.svg```
 
 ### Step 4: Group by Subtype within Major Cell Type
 ```
 group.py
 ```
 For the vascular cell type, the SVG is grouped into bundle sheath cells, xylem, and phloem. The rest of the cells are homogenous in terms of cell type
-- Program Input: conversion_pipeline/intermediates/*_eplant_format.svg
-- Program Output: conversion_pipeline/conditioned/*.svg (4 copies for each condition and 6 total cell types yield 24 individual SVGs)
+- Program Input: ```conversion_pipeline/intermediates/*_eplant_format.svg```
+- Program Output: ```conversion_pipeline/conditioned/*.svg``` (4 copies for each condition and 6 total cell types yield 24 individual SVGs)
 
 ### Step 5: 4x3 Grid Formation
 ```
 group.py
 ```
 The 24 individual SVGs are combined to form a 4x3 grid with condition as column and cell type as rows
-- Program Input: conversion_pipeline/conditioned/*.svg
-- Program Output: conversion_pipeline/merged_grid.svg
+- Program Input: ```conversion_pipeline/conditioned/*.svg```
+- Program Output: ```conversion_pipeline/merged_grid.svg```
 
 ## File Naming Conventions
 
