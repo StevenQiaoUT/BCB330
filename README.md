@@ -100,12 +100,12 @@ h5ad_to_json.py
 https://icy.bioimageanalysis.org/
 ```
 
-2. **Convert ICY XML to SVG format:**
+2. **Convert ICY XML to ggPlantmap SVG format:**
 ```
 icy_xml_to_ggplantmap_svg.r
 ```
 
-2. **Convert from ggPlantMap SVG to ePlant SVG Format:**
+2. **Convert from ggPlantmap SVG to ePlant SVG Format:**
 ```
 gg_to_ePlant_ungrouped.py
 ```
@@ -115,7 +115,7 @@ gg_to_ePlant_ungrouped.py
 group.py
 ```
 
-4. **Combine the 24 ePlant SVGs into a 4*3 Grid**
+4. **Combine the Individual 24 ePlant SVGs into a 4*3 Grid**
 ```
 fourbythree.py
 ```
