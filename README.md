@@ -85,21 +85,39 @@ BCB330/
 ## Usage
 
 ### Quick Start
-
-1. **Convert ICY XML to SVG format:**
-```r
-# Run in R
-source("icy_xml_to_ggplantmap_svg.R")
+#### Generate UMAP Plots
+```
+umap.py
+```
+#### Convert h5ad Expressions Values to JSON
+```
+h5ad_to_json.py
 ```
 
-2. **Process H5AD data:**
-```bash
-python umap.py
+#### Pipeline Usage
+1. **Trace PNG/JPG Using ICY:**
+```
+https://icy.bioimageanalysis.org/
 ```
 
-3. **Generate composite grid layout:**
-```bash
-python fourby3tree.py
+2. **Convert ICY XML to SVG format:**
+```
+icy_xml_to_ggplantmap_svg.r
+```
+
+2. **Convert from ggPlantMap SVG to ePlant SVG Format:**
+```
+gg_to_ePlant_ungrouped.py
+```
+
+3. **Group each ePlant SVG by Cell Subtype:**
+```
+group.py
+```
+
+4. **Combine the 24 ePlant SVGs into a 4*3 Grid**
+```
+fourbythree.py
 ```
 
 ## Workflow
