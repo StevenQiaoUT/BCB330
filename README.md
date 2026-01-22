@@ -123,32 +123,43 @@ fourbythree.py
 ## Workflow
 
 ### Step 1: Prepare ICY XML Files
-Place your ICY XML cell annotation files in the root directory. Each file should represent a specific cell type (epidermal, guard, trichome, palisade, spongy, vascular).
+Place your ICY XML cell annotation files in the root directory after tracing each one from its original PNG/JPG format. Each file should represent a specific cell type (epidermal, guard, trichome, palisade, spongy, vascular).
 
-### Step 2: Convert XML to SVG
-```r
+In this repository, the ICY XMLs reside in ```conversion_pipeline/icy_outputs```
+
+### Step 2: Convert ICY XML to ggPlantmap SVG
+```
 # Open R and run the conversion script
-source("icy_xml_to_ggplantmap_svg.R")
+source("icy_xml_to_ggplantmap_svg.r")
 ```
 
-This generates individual SVG files for each cell type and timepoint.
+This generates individual SVG files for each cell type. The process involves first converting the ICY XML into ggPlantmap. Afterwards, ggPlantmap gets converted to ggPlantmap SVG
+- Program Input: conversion_pipeline/icy_outputs/*.xml
+- Program Output: conversion_pipeline/intermediates/*_output.svg
 
-### Step 3: Process Single-Cell Data
-```bash
-# Generate UMAP visualizations
-python umap.py
-
-# View H5AD data (optional)
-Rscript h5ad_viewer_ad.r
+### Step 3: Convert from ggPlantmap SVG to ePlant SVG Format
 ```
-
-### Step 4: Create Composite Visualization
-```bash
-# Generate 4×3 grid layout (4 timepoints × 3 tissue categories)
-python fourby3tree.py
+gg_to_ePlant_ungrouped.py
 ```
+This step is responsible for rearranging the SVG drawing structure so that it is compatible with ePlant.
+- Program Input: conversion_pipeline/intermediates/*_output.svg
+- Program Output: conversion_pipeline/intermediates/*_eplant_format.svg
 
-This creates `merged_grid.svg` with all cell types organized by tissue category across timepoints.
+### Step 4: Group by Subtype within Major Cell Type
+```
+group.py
+```
+For the vascular cell type, the SVG is grouped into bundle sheath cells, xylem, and phloem. The rest of the cells are homogenous in terms of cell type
+- Program Input: conversion_pipeline/intermediates/*_eplant_format.svg
+- Program Output: conversion_pipeline/conditioned/*.svg (4 copies for each condition and 6 total cell types yield 24 individual SVGs)
+
+### Step 5: 4x3 Grid Formation
+```
+group.py
+```
+The 24 individual SVGs are combined to form a 4x3 grid with condition as column and cell type as rows
+- Program Input: conversion_pipeline/conditioned/*.svg
+- Program Output: conversion_pipeline/merged_grid.svg
 
 ## File Naming Conventions
 
