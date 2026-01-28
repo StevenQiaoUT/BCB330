@@ -4,3 +4,9 @@
 *.png
 __pycache__/
 .DS_Store
+.idea/
+.Rhistory
+.venv/
+__pycache__/
+**/.idea/
+old_xmls/
