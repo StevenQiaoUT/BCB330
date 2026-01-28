@@ -8,8 +8,7 @@ This project processes single-cell RNA-seq data from Arabidopsis leaf tissues ac
 
 ## Table of Contents
 - [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
+- [Installation Instructions](#installation-instructions)
 - [Project Structure](#project-structure)
 - [Usage](#usage)
 - [Workflow](#workflow)
@@ -24,41 +23,94 @@ This project processes single-cell RNA-seq data from Arabidopsis leaf tissues ac
 - Create composite tissue grid layouts for multiple timepoints
 - Support for multiple Arabidopsis leaf tissue types
 
-## Prerequisites
+## Installation Instructions
 
-### Software Requirements
-- **R** (4.0+)
-- **Python** (3.8+)
+This project requires Python, R, and system-level dependencies. Follow these steps in order.
 
-### R Packages
+
+### Prerequisites
+
+- **Python**: 3.8 or higher
+- **R**: 4.5.x (tested with R 4.5.1)
+- **Git**: For cloning repositories
+
+
+### Step 1: Install System Dependencies
+
+#### HDF5 Library
+
+HDF5 is required for reading `.h5ad` files and must be installed before Python packages.
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get update
+sudo apt-get install libhdf5-dev
+```
+
+**macOS (with Homebrew):**
+```bash
+brew install hdf5
+```
+
+**Windows:**
+```bash
+# Using Conda (recommended for Windows)
+conda install -c conda-forge hdf5
+```
+
+### Step 2: Install Python Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Step 3: Install R Dependencies
+
+#### 3.1 Update BiocManager and Bioconductor
+
+**IMPORTANT**: You must update BiocManager to the latest version and install Bioconductor 3.22 for R 4.5 compatibility.
+
+Open R or RStudio and run:
+
 ```r
-install.packages(c("ggplot2", "xml2", "dplyr", "ggPlantmap", "SingleCellExperiment", "zellkonverter"))
+install.packages("BiocManager")
+
+BiocManager::install(version = "3.22")
 ```
 
-### Python Packages
-```bash
-pip install -r requirements.txt
+#### 3.2 Install Bioconductor Packages
+
+```r
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("SingleCellExperiment")
+
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("zellkonverter")
 ```
 
-Required Python packages likely include:
-- pandas
-- numpy
-- scanpy
-- plotly
-- pathlib
+#### 3.3 Install tidyverse
 
-## Installation
-```bash
-# Clone the repository
-git clone https://github.com/StevenQiaoUT/BCB330.git
-cd BCB330
-
-# Install Python dependencies
-pip install -r requirements.txt
-
-# Install R packages (run in R console)
-# See Prerequisites section above
+```r
+install.packages("tidyverse")
 ```
+
+#### 3.4 Install ggPlantmap from GitHub
+
+```r
+install.packages("devtools")
+library(devtools)
+
+install_github("leonardojo/ggPlantmap")
+```
+
+### Version Information
+
+This setup has been tested with:
+- R 4.5.1
+- Bioconductor 3.22
+- Python 3.8+
 
 ## Project Structure
 ```
