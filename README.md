@@ -115,20 +115,33 @@ This setup has been tested with:
 ## Project Structure
 ```
 BCB330/
-├── conversion_pipeline/
-│   ├── conditioned/
-│   ├── icy_outputs/                 
-│   ├── intermediates/
-│   ├── icy_xml_to_ggplantmap_svg.r  
-│   ├── gg_to_eplant_ungrouped.py
-│   ├── group.py    
-│   ├── fourbythree.py        
-│   └── get_coordinates.py        
-├── interactive_umap.py                   
-├── h5ad_to_json_avg.py          
-├── requirements.txt                 
+├── **h5ad_pipeline/**
+│   ├── h5ad_to_json.py
+│   ├── h5ad_viewer_ad.r
+│   ├── h5ad_viewer_bc.r
+│   ├── umap.py
+│   ├── **conversion_pipeline/**
+│   │   ├── fourbythree.py
+│   │   ├── get_coordinates.py
+│   │   ├── gg_to_eplant_ungrouped.py
+│   │   ├── group.py
+│   │   ├── combine.py
+│   |── **svg_generation/**
+│   │   ├── icy_xml_to_ggplantmap_svg.r
+│   │   ├── merged_grid.svg
+│   │   ├── merged_grid.xml
+│   │   ├── merged_grid_coords.xml
+│   │   ├── eplant_config_with_coords.xml
+│   │   ├── conditioned/
+│   │   ├── icy_outputs/
+│   │   └── intermediates/
+├── .Rproj.user/
+├── .gitignore
 ├── BCB330 Proposal - Steven Qiao.pdf
-└── ePlant SVG and Expression Data Guide.pdf
+├── ePlant SVG and Expression Data Guide.pdf
+├── README.md
+├── requirements.txt
+└── timer.r
 ```
 
 ## Usage
