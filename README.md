@@ -119,16 +119,13 @@ BCB330/
 │   ├── conditioned/
 │   ├── icy_outputs/                 
 │   ├── intermediates/
-│   ├── combine.py                 
 │   ├── icy_xml_to_ggplantmap_svg.r  
-│   ├── fourbythree.py        
-|   ├── get_coordinates.py        
 │   ├── gg_to_eplant_ungrouped.py
-│   └── group.py    
-├── h5ad_viewer_*.r
-├── h5ad_to_json.py          
-├── umap.py                   
-├── timer.r
+│   ├── group.py    
+│   ├── fourbythree.py        
+│   └── get_coordinates.py        
+├── interactive_umap.py                   
+├── h5ad_to_json_avg.py          
 ├── requirements.txt                 
 ├── BCB330 Proposal - Steven Qiao.pdf
 └── ePlant SVG and Expression Data Guide.pdf
@@ -137,39 +134,91 @@ BCB330/
 ## Usage
 
 ### Quick Start
+
 #### Generate UMAP Plots
-```
-umap.py
-```
-#### Convert h5ad Expressions Values to JSON
-```
-h5ad_to_json.py
+```bash
+# Basic usage - visualize a specific gene
+python interactive_umap.py at.h5ad AT3G05727
+
+# Custom output filename
+python interactive_umap.py at.h5ad AT3G05727 my_umap.html
+
+# Use files from different directory
+python interactive_umap.py /path/to/data.h5ad AT3G05727 output.html
 ```
 
-#### Pipeline Usage
-1. **Trace PNG/JPG Using ICY:**
-```
-https://icy.bioimageanalysis.org/
+#### Convert H5AD Expression Values to JSON
+```bash
+# Single gene
+python h5ad_to_json_avg.py at.h5ad output.json label_majorXcondition AT3G05727
+
+# Multiple genes
+python h5ad_to_json_avg.py at.h5ad output.json label_majorXcondition AT3G05727 AT1G01010 AT5G12345
+
+# All genes (no gene list specified)
+python h5ad_to_json_avg.py at.h5ad all_genes.json label_v2
+
+# Different paths
+python h5ad_to_json_avg.py /data/at.h5ad /output/result.json cell_type AT3G05727
 ```
 
-2. **Convert ICY XML to ggPlantmap SVG format:**
-```
-icy_xml_to_ggplantmap_svg.r
+### Pipeline Usage
+
+#### 1. Trace PNG/JPG Using ICY
+Visit: https://icy.bioimageanalysis.org/
+
+#### 2. Convert ICY XML to ggPlantmap SVG format
+```r
+# Open R and run the conversion script
+source("icy_xml_to_ggplantmap_svg.r")
+
+# Convert one XML file to SVG
+Rscript icy_xml_to_ggplantmap_svg.r vascular.xml vascular_output.svg
+
+# With author name
+Rscript icy_xml_to_ggplantmap_svg.r guard_cell.xml guard_output.svg --author "Steven Qiao"
+
+# Using full paths
+Rscript icy_xml_to_ggplantmap_svg.r /path/to/input/epidermal.xml /path/to/output/epidermal.svg
 ```
 
-2. **Convert from ggPlantmap SVG to ePlant SVG Format:**
-```
-gg_to_ePlant_ungrouped.py
+#### 3. Convert from ggPlantmap SVG to ePlant SVG Format
+```bash
+# Basic usage
+python gg_to_eplant_ungrouped.py spongy_output.svg spongy_eplant_format.svg
+
+# Process file from different directory
+python gg_to_eplant_ungrouped.py data/input.svg output/result.svg
 ```
 
-3. **Group each ePlant SVG by Cell Subtype:**
-```
-group.py
+#### 4. Group each ePlant SVG by Cell Subtype
+```bash
+# Basic usage
+python group.py spongy_eplant_format.svg spongy_tissue_grouped.svg
+
+# Different paths
+python group.py data/input.svg output/grouped.svg
 ```
 
-4. **Combine the Individual 24 ePlant SVGs into a 4*3 Grid**
+#### 5. Combine the Individual 24 ePlant SVGs into a 4×3 Grid
+```bash
+# Basic usage with default settings
+python fourbythree.py conditioned/ merged_grid.svg
+
+# Custom dimensions
+python fourbythree.py conditioned/ output.svg --cell-width 500 --cell-height 400
+
+# Full custom configuration
+python fourbythree.py data/ grid.svg --cols 4 --cell-width 400 --cell-height 300 --spacing 50
 ```
-fourbythree.py
+
+#### 6. Generate Coordinates for Grid (Optional)
+```bash
+# Basic usage
+python get_coordinates.py merged_grid.xml merged_grid_coords.xml
+
+# Custom scale factor
+python get_coordinates.py input.xml output.xml --scale 0.5
 ```
 
 ## Workflow
@@ -180,7 +229,7 @@ Place your ICY XML cell annotation files in the root directory after tracing eac
 In this repository, the ICY XMLs reside in ```conversion_pipeline/icy_outputs```
 
 ### Step 2: Convert ICY XML to ggPlantmap SVG
-```
+```r
 # Open R and run the conversion script
 source("icy_xml_to_ggplantmap_svg.r")
 ```
@@ -190,26 +239,26 @@ This generates individual SVG files for each cell type. The process involves fir
 - Program Output: ```conversion_pipeline/intermediates/*_output.svg```
 
 ### Step 3: Convert from ggPlantmap SVG to ePlant SVG Format
-```
-gg_to_ePlant_ungrouped.py
+```bash
+python gg_to_eplant_ungrouped.py spongy_output.svg spongy_eplant_format.svg
 ```
 This step is responsible for rearranging the SVG drawing structure so that it is compatible with ePlant.
 - Program Input: ```conversion_pipeline/intermediates/*_output.svg```
 - Program Output: ```conversion_pipeline/intermediates/*_eplant_format.svg```
 
 ### Step 4: Group by Subtype within Major Cell Type
-```
-group.py
+```bash
+python group.py spongy_eplant_format.svg spongy_tissue_grouped.svg
 ```
 For the vascular cell type, the SVG is grouped into bundle sheath cells, xylem, and phloem. The rest of the cells are homogenous in terms of cell type
 - Program Input: ```conversion_pipeline/intermediates/*_eplant_format.svg```
 - Program Output: ```conversion_pipeline/conditioned/*.svg``` (4 copies for each condition and 6 total cell types yield 24 individual SVGs)
 
-### Step 5: 4x3 Grid Formation
+### Step 5: 4×3 Grid Formation
+```bash
+python fourbythree.py conditioned/ merged_grid.svg
 ```
-group.py
-```
-The 24 individual SVGs are combined to form a 4x3 grid with condition as column and cell type as rows
+The 24 individual SVGs are combined to form a 4×3 grid with condition as column and cell type as rows
 - Program Input: ```conversion_pipeline/conditioned/*.svg```
 - Program Output: ```conversion_pipeline/merged_grid.svg```
 
@@ -250,18 +299,43 @@ Located in `conditioned/` directory, one file per cell type per timepoint.
 - Labeled tissue categories and timepoints
 - Grid structure for easy comparison across conditions
 
+### Interactive UMAP Visualizations
+- **File**: `interactive_umap.html`
+- HTML-based interactive plots with dropdown menus for cell type selection
+- Color-coded gene expression levels
+- Hover tooltips with cell type and expression information
+- Statistics for each cell type (mean, standard deviation, cell count)
+
+### JSON Expression Data
+- **File**: `avg_expression.json`
+- Average gene expression values per cell type
+- Compatible with ePlant browser integration
+- Supports single or multiple genes
+
 ## Troubleshooting
 
 ### Common Issues
 
+**Issue**: "cannot change working directory" error
+- **Solution**: All scripts now use command-line arguments. Run them from any directory with full paths to input/output files.
+
 **Issue**: SVG files not found
-- **Solution**: Ensure ICY XML files are converted first and output files are in `conditioned/` directory
+- **Solution**: Ensure ICY XML files are converted first and specify correct input directory path.
 
 **Issue**: Python module not found
 - **Solution**: Install missing packages: `pip install [package-name]`
 
 **Issue**: R package errors
-- **Solution**: Install required R packages (see Prerequisites)
+- **Solution**: Update BiocManager and install Bioconductor 3.22 (see Installation Instructions)
+
+**Issue**: "packages are not available for this version of R"
+- **Solution**: Make sure BiocManager is updated: `install.packages("BiocManager")` then `BiocManager::install(version = "3.22")`
+
+**Issue**: HDF5 library errors
+- **Solution**: Install HDF5 system library before Python packages (see Step 1 of Installation)
+
+**Issue**: Gene not found in dataset
+- **Solution**: Check available genes in your H5AD file. Scripts will suggest available genes if specified gene is not found.
 
 ## References
 

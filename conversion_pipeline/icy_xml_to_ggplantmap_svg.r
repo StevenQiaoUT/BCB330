@@ -1,312 +1,140 @@
-library(ggplot2)
-library(ggPlantmap)
-library(tidyverse)
+#!/usr/bin/env Rscript
+#' ICY XML to ggPlantmap SVG Converter
+#'
+#' Converts ICY XML cell annotation files to ggPlantmap-compatible SVG format.
+#'
+#' Usage:
+#'   Rscript icy_xml_to_ggplantmap_svg.r <input_xml> <output_svg> [--author AUTHOR]
+#'
+#' Arguments:
+#'   input_xml   : Path to input ICY XML file
+#'   output_svg  : Path to output SVG file
+#'   --author    : (Optional) Author name for SVG metadata (default: "User")
+#'
+#' Examples:
+#'   # Basic usage
+#'   Rscript icy_xml_to_ggplantmap_svg.r vascular.xml vascular_output.svg
+#'
+#'   # With author name
+#'   Rscript icy_xml_to_ggplantmap_svg.r guard_cell.xml guard_output.svg --author "Steven Qiao"
+#'
+#'   # Process multiple files with a batch script
+#'   for file in *.xml; do
+#'     Rscript icy_xml_to_ggplantmap_svg.r "$file" "${file%.xml}_output.svg"
+#'   done
 
-setwd("/Users/stevenqiao/Desktop/ggplantmap_data")
+# ============================================
+# LOAD REQUIRED LIBRARIES
+# ============================================
 
-# Load data
-data <- read.csv("avg_expression.csv")
-reference <- read.table("celltype_reference.txt", sep="\t", header=TRUE)
+# Suppress package startup messages
+suppressPackageStartupMessages({
+  library(ggPlantmap)
+  library(xml2)
+  library(dplyr)
+  library(tibble)
+})
 
-print(paste("Loaded", nrow(data), "genes"))
-print(paste("Loaded", nrow(reference), "cell types"))
+# ============================================
+# PARSE COMMAND-LINE ARGUMENTS
+# ============================================
 
-# Create mapping from your cell types to ggPlantmap ROI names
-celltype_mapping <- tribble(
-  ~Identity, ~ROI_mapped,
-  "0: Mesophyll_1", "Parenchima.palisade",
-  "1: Mesophyll_2", "Parenchima.palisade",
-  "2: Mesophyll_3", "Parenchima.palisade",
-  "3: Mesophyll_4", "Parenchima.palisade",
-  "4: Mesophyll_5", "Parenchima.sponge",
-  "5: Epidermal_1", "epidermis.adaxial",
-  "6: Immune active", "Parenchima.sponge",
-  "7: Mesophyll_6", "Parenchima.sponge",
-  "8: Guard_1", "epidermis.stomata",
-  "9: Mesophyll_7", "Parenchima.sponge",
-  "10: Defense state", "Parenchima.sponge",
-  "11: Vascular_1", "vascularbundle.xylem",
-  "12: Vascular_2", "vascularbundle.phloem",
-  "13: Epidermal_2", "epidermis.abaxial",
-  "14: Phloem companion", "vascularbundle.phloem",
-  "15: Stress responsive", "Parenchima.sponge",
-  "16: Phloem Parenchyma", "vascularbundle.phloem",
-  "17: Sieve element_responsive", "vascularbundle.phloem",
-  "18: Dividing_1", "Parenchima.palisade",
-  "19: Guard_2", "epidermis.stomata",
-  "20: Dividing_2", "Parenchima.sponge",
-  "21: Epidermal_3", "epidermis.abaxial",
-  "22: Metabolic stress state", "Parenchima.sponge",
-  "23: Hydathode", "epidermis.abaxial",
-  "24: Trichome", "epidermis.adaxial",
-  "25: Myrosin", "Parenchima.palisade",
-  "26: Sugar metabolic state", "Parenchima.sponge"
-)
+args <- commandArgs(trailingOnly = TRUE)
 
-# Merge reference with mapping
-reference <- reference %>%
-  left_join(celltype_mapping, by="Identity")
-
-print("Reference with mapping:")
-print(reference)
-
-# Process to tidy format
-processed.data <- data %>%
-    pivot_longer(-Gene, names_to="name", values_to="value") %>%
-    filter(!str_detect(name, "[.]"))
-
-# Create plots for each gene
-dir.create("plots", showWarnings = FALSE)
-
-for (k in unique(data$Gene)) {
-  cat("\nProcessing gene:", k, "\n")
-  
-  # Filter for one gene and merge with reference
-  single.data <- processed.data %>%
-    filter(Gene == k) %>%
-    merge(reference, by.x="name", by.y="Cluster", all.x=TRUE)
-  
-  cat("Expression range:", min(single.data$value, na.rm=TRUE), "to", max(single.data$value, na.rm=TRUE), "\n")
-  
-  # Merge with ggPlantmap using mapped ROI names
-  final.table <- ggPlantmap.merge(
-    ggPm.At.leaf.crosssection,
-    single.data,
-    id.x = "ROI.name",
-    id.y = "ROI_mapped"
-  )
-  
-  # Calculate appropriate limits for color scale
-  min_val <- min(single.data$value, na.rm=TRUE)
-  max_val <- max(single.data$value, na.rm=TRUE)
-  
-  # Create heatmap with adjusted scale for negative values
-  if (min_val < 0) {
-    # Use a diverging color scale for data with negative values
-    plot <- ggPlantmap.heatmap(final.table, value.quant = value) + 
-      scale_fill_gradient2(
-        low="blue", 
-        mid="white", 
-        high="red", 
-        midpoint=0,
-        limits=c(min_val, max_val)
-      ) +
-      labs(title=paste0(k)) +
-      theme_minimal()
-  } else {
-    # Use simple gradient for positive-only data
-    plot <- ggPlantmap.heatmap(final.table, value.quant = value) + 
-      scale_fill_gradient(low="white", high="red", limits=c(0, max_val)) +
-      labs(title=paste0(k)) +
-      theme_minimal()
-  }
-  
-  print(plot)
-  
-  # Save plot
-  ggsave(plot=plot, paste0("plots/", k, ".png"), dpi=300, width=8, height=8)
-  cat("✓ Saved: plots/", k, ".png\n")
+# Function to display usage
+print_usage <- function() {
+  cat("\n")
+  cat("ICY XML to ggPlantmap SVG Converter\n")
+  cat("===================================\n\n")
+  cat("Usage:\n")
+  cat("  Rscript icy_xml_to_ggplantmap_svg.r <input_xml> <output_svg> [--author AUTHOR]\n\n")
+  cat("Arguments:\n")
+  cat("  input_xml   : Path to input ICY XML file\n")
+  cat("  output_svg  : Path to output SVG file\n")
+  cat("  --author    : (Optional) Author name for SVG metadata (default: 'User')\n\n")
+  cat("Examples:\n")
+  cat("  Rscript icy_xml_to_ggplantmap_svg.r vascular.xml vascular_output.svg\n")
+  cat("  Rscript icy_xml_to_ggplantmap_svg.r guard.xml guard.svg --author 'Steven Qiao'\n\n")
 }
 
-cat("\n✓ All plots saved in 'plots' directory\n")
+# Check for minimum arguments
+if (length(args) < 2) {
+  print_usage()
+  stop("Error: Insufficient arguments provided", call. = FALSE)
+}
 
-# ===============================================================================
+# Parse arguments
+input_xml <- args[1]
+output_svg <- args[2]
+author <- "User"  # default
 
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-BiocManager::install(c("zellkonverter", "SingleCellExperiment"))
+# Check for optional --author flag
+if (length(args) >= 4 && args[3] == "--author") {
+  author <- args[4]
+}
 
-library(zellkonverter)
-library(SingleCellExperiment)
-library(ggplot2)
-library(ggPlantmap)
-library(xml2)
-library(dplyr)
+# Validate input file exists
+if (!file.exists(input_xml)) {
+  stop(paste("Error: Input file", input_xml, "not found"), call. = FALSE)
+}
 
-p <- path.expand("~/Desktop/UofT Files/Third Year/BCB330/at.h5ad")
-p <- normalizePath(p, mustWork = TRUE)
-
-sce <- readH5AD(p)
-
-# ============================================
-# BASIC STRUCTURE
-# ============================================
-
-# Overall summary
-sce
-
-# Dimensions (cells x genes)
-dim(sce)
-
-# ============================================
-# GENE INFORMATION
-# ============================================
-
-# See all gene names
-rownames(sce)  # or head(rownames(sce), 20) for first 20
-
-# Check if AT4G29780 is in the dataset
-"SRC2" %in% rownames(sce)
-
-# Gene metadata (if any)
-rowData(sce)
+# Print configuration
+cat("\n")
+cat("============================================================\n")
+cat("ICY XML to ggPlantmap SVG Converter\n")
+cat("============================================================\n")
+cat("Input file:  ", input_xml, "\n")
+cat("Output file: ", output_svg, "\n")
+cat("Author:      ", author, "\n")
+cat("============================================================\n")
+cat("\n")
 
 # ============================================
-# CELL INFORMATION & METADATA
+# CONVERSION FUNCTION
 # ============================================
 
-# Cell metadata (this is what you need!)
-colData(sce)
-
-# See column names in metadata
-colnames(colData(sce))
-
-# View first few rows
-head(colData(sce))
-
-# Check unique cell types
-unique(colData(sce)$cell_type)  # adjust column name if different
-
-# Check what treatment conditions exist
-unique(colData(sce)$condition)  # or treatment, or whatever they named it
-
-# ============================================
-# EXPRESSION DATA
-# ============================================
-
-# Access the expression matrix
-assays(sce)  # see what assays are available
-
-# Get expression data (usually in "X" or "counts" or "logcounts")
-expr_matrix <- assay(sce, "X")  # or assay(sce, 1) for first assay
-
-# Dimensions
-dim(expr_matrix)
-
-# ============================================
-# EXTRACT SRC2 EXPRESSION DATA
-# ============================================
-
-# Get expression for SRC2 across all cells
-src2_expr <- assay(sce, "X")["SRC2", ]
-
-# Combine with cell metadata using the correct column
-gene_data <- data.frame(
-  label_v2 = colData(sce)$label_v2,      # detailed cell type
-  label_major = colData(sce)$label_major, # major cell type (simpler)
-  condition = colData(sce)$condition,
-  expression = src2_expr
-)
-
-head(gene_data)
-
-# ============================================
-# CHECK WHAT CELL TYPES ARE AVAILABLE
-# ============================================
-
-# See all unique cell types (detailed)
-unique(gene_data$label_v2)
-
-# See all unique major cell types (simpler)
-table(gene_data$label_major)
-
-# ============================================
-# CALCULATE MEAN EXPRESSION
-# ============================================
-
-library(dplyr)
-
-# Mean expression by major cell type (across all conditions)
-mean_by_major <- gene_data %>%
-  group_by(label_major) %>%
-  summarize(mean_expr = mean(expression, na.rm = TRUE))
-
-print(mean_by_major)
-
-# Mean expression by detailed cell type
-mean_by_detailed <- gene_data %>%
-  group_by(label_v2) %>%
-  summarize(mean_expr = mean(expression, na.rm = TRUE))
-
-print(mean_by_detailed)
-
-# Mean by cell type AND condition
-mean_by_type_condition <- gene_data %>%
-  group_by(label_major, condition) %>%
-  summarize(mean_expr = mean(expression, na.rm = TRUE), .groups = "drop")
-
-print(mean_by_type_condition)
-
-# Create a mapping to broader categories
-gene_data_categorized <- gene_data %>%
-  mutate(broad_category = case_when(
-    grepl("Epidermal", label_v2) ~ "epidermis",
-    grepl("Guard", label_v2) ~ "epidermis",  # Guard cells are specialized epidermal
-    grepl("Vascular", label_v2) ~ "xylem",   # Assuming vascular includes xylem
-    grepl("Phloem|Sieve element", label_v2) ~ "phloem",
-    TRUE ~ "other"
-  ))
-
-# Calculate mean expression for your three target cell types
-mean_for_heatmap <- gene_data_categorized %>%
-  filter(broad_category %in% c("epidermis", "xylem", "phloem")) %>%
-  group_by(broad_category) %>%
-  summarize(mean_expr = mean(expression, na.rm = TRUE))
-
-print(mean_for_heatmap)
-
-# Create external_data for your heatmap
-external_data <- tibble(
-  ROI.name = mean_for_heatmap$broad_category,
-  Gene.expression = exp(mean_for_heatmap$mean_expr)
-)
-
-print(external_data)
-
-# Now merge and create heatmap
-merged_data <- ggPlantmap.merge(
-  vascular_data,
-  external_data,
-  id.x = "ROI.name",
-  id.y = "ROI.name"
-)
-
-ggPlantmap.heatmap(merged_data, Gene.expression) +
-  scale_fill_gradient(low = "white", high = "red")
-
-# ================================================
-
-# Function to convert Icy XML to ggPlantmap format
-# Function to convert Icy XML to ggPlantmap format
 icy_to_ggplantmap <- function(xml_file) {
-  
+  #' Convert ICY XML to ggPlantmap format
+  #'
+  #' @param xml_file Path to ICY XML file
+  #' @return tibble with ROI data (ROI.name, ROI.id, point, x, y)
+
+  cat("Reading XML file...\n")
+
   # Read XML file
-  xml_data <- read_xml(xml_file)
-  
+  tryCatch({
+    xml_data <- read_xml(xml_file)
+  }, error = function(e) {
+    stop(paste("Error reading XML file:", e$message), call. = FALSE)
+  })
+
   # Find all ROI nodes
   roi_nodes <- xml_find_all(xml_data, ".//rois/roi")
-  
+
   if (length(roi_nodes) == 0) {
-    stop("No ROI nodes found in the XML file. Check the file structure.")
+    stop("No ROI nodes found in the XML file. Check the file structure.", call. = FALSE)
   }
-  
+
+  cat("Found", length(roi_nodes), "ROI(s)\n")
+
   # Parse each ROI
   roi_list <- lapply(seq_along(roi_nodes), function(roi_index) {
     roi <- roi_nodes[[roi_index]]
-    
-    # Get ROI name from the <name> tag (biological names like C1, C2, END, etc.)
+
+    # Get ROI name from the <name> tag
     roi_name <- xml_text(xml_find_first(roi, ".//name"))
     if (is.na(roi_name) || roi_name == "") {
       roi_name <- paste0("ROI_", roi_index)
     }
-    
+
     # Get all points
     point_nodes <- xml_find_all(roi, ".//points/point")
-    
+
     if (length(point_nodes) == 0) {
+      warning(paste("ROI", roi_index, "has no points, skipping"))
       return(NULL)
     }
-    
+
     # Extract coordinates for each point
     coords <- data.frame(
       ROI.name = roi_name,
@@ -319,223 +147,81 @@ icy_to_ggplantmap <- function(xml_file) {
         as.numeric(xml_text(xml_find_first(p, ".//pos_y")))
       })
     )
-    
+
     return(coords)
   })
-  
+
   # Remove NULL entries and combine
   roi_list <- roi_list[!sapply(roi_list, is.null)]
-  
+
   if (length(roi_list) == 0) {
-    stop("No valid ROI data found in the XML file.")
+    stop("No valid ROI data found in the XML file.", call. = FALSE)
   }
-  
+
   # Combine all ROIs into single data frame
   roi_data <- bind_rows(roi_list)
-  
-  # Convert to tibble for better printing
+
+  # Convert to tibble
   roi_data <- as_tibble(roi_data)
-  
+
+  cat("Extracted", nrow(roi_data), "points from", length(unique(roi_data$ROI.name)), "unique ROI(s)\n")
+
   return(roi_data)
 }
 
-# Use it on your file
-roi_data <- icy_to_ggplantmap("/Users/stevenqiao/Desktop/ggplantmap_data/icy_new_3.xml")
-
-# View the result
-print(roi_data)
-
-ggPlantmap.plot(roi_data)
-
-# =======================================================
-# Sample external quantitative data for heatmap testing
-# This should match your cell type names from your SVG
-library(tibble)
-
-vascular_data <- XML.to.ggPlantmap("/Users/stevenqiao/Desktop/vascular.xml")
-
-ggPlantmap.to.SVG(vascular_data,
-                  group.name = "ROI.name",
-                  author = "Steven Qiao",
-                  svg.name = "vascular_output.svg")
-
-guard_cell_data <- XML.to.ggPlantmap("/Users/stevenqiao/Desktop/guard_cell.xml")
-
-ggPlantmap.to.SVG(guard_cell_data,
-                  group.name = "ROI.name",
-                  author = "Steven Qiao",
-                  svg.name = "guard_cell_output.svg")
-
-epidermal_cell_data <- XML.to.ggPlantmap("/Users/stevenqiao/Desktop/epidermal_cell.xml")
-
-ggPlantmap.to.SVG(epidermal_cell_data,
-                  group.name = "ROI.name",
-                  author = "Steven Qiao",
-                  svg.name = "epidermal_cell_output.svg")
-
-trichome_data <- XML.to.ggPlantmap("/Users/stevenqiao/Desktop/trichome.xml")
-
-ggPlantmap.to.SVG(trichome_data,
-                  group.name = "ROI.name",
-                  author = "Steven Qiao",
-                  svg.name = "trichome_output.svg")
-
-palisade_data <- XML.to.ggPlantmap("/Users/stevenqiao/Desktop/palisade.xml")
-
-ggPlantmap.to.SVG(palisade_data,
-                  group.name = "ROI.name",
-                  author = "Steven Qiao",
-                  svg.name = "palisade_output.svg")
-
-spongy_data <- XML.to.ggPlantmap("/Users/stevenqiao/Desktop/spongy.xml")
-
-ggPlantmap.to.SVG(spongy_data,
-                  group.name = "ROI.name",
-                  author = "Steven Qiao",
-                  svg.name = "spongy_output.svg")
-
-
-
-# Generate random gene expression values for all 34 regions
-external_data <- tibble(
-  ROI.name = c("epidermis", "xylem", "phloem"),
-  Gene.expression = c(100, 0, 50)  # Random values between 0-100
-)
-
-print(external_data)
-
-merged_data <- ggPlantmap.merge(
-  vascular_data, 
-  external_data,
-  id.x = "ROI.name",
-  id.y = "ROI.name"
-)
-
-library(ggplot2)
-
-print(merged_data)
-
-ggPlantmap.heatmap(merged_data, Gene.expression) +
-  scale_fill_gradient(low = "white", high = "red")
-
-# =======================================================
-
-vascular_data <- XML.to.ggPlantmap("/Users/stevenqiao/Desktop/vascular.xml")
-print(vascular_data)
-ggPlantmap.plot(vascular_data)
-
-epidermal_data <- XML.to.ggPlantmap("/Users/stevenqiao/Desktop/epidermal.xml")
-print(epidermal_data)
-ggPlantmap.plot(epidermal_data)
-
-pavement_data <- XML.to.ggPlantmap("/Users/stevenqiao/Desktop/pavement.xml")
-print(pavement_data)
-ggPlantmap.plot(pavement_data)
-
-trichome_data <- XML.to.ggPlantmap("/Users/stevenqiao/Desktop/trichome.xml")
-print(trichome_data)
-ggPlantmap.plot(trichome_data)
-
-palisade_data <- XML.to.ggPlantmap("/Users/stevenqiao/Desktop/palisade.xml")
-print(palisade_data)
-ggPlantmap.plot(palisade_data)
-
-spongy_data <- XML.to.ggPlantmap("/Users/stevenqiao/Desktop/spongy.xml")
-print(spongy_data)
-ggPlantmap.plot(spongy_data)
-
-
-library(ggplot2)
-library(dplyr)
-
 # ============================================
-# EXTRACT UMAP COORDINATES
+# MAIN CONVERSION
 # ============================================
 
-# Get UMAP coordinates from reducedDims
-umap_coords <- reducedDim(sce, "X_umap")
+cat("Converting ICY XML to ggPlantmap format...\n")
 
-# Combine UMAP coordinates with cell metadata and SRC2 expression
-umap_data <- data.frame(
-  UMAP1 = umap_coords[, 1],
-  UMAP2 = umap_coords[, 2],
-  cell_type_detailed = colData(sce)$label_v2,
-  cell_type_major = colData(sce)$label_major,
-  condition = colData(sce)$condition,
-  SRC2_expression = assay(sce, "X")["SRC2", ]
-)
+# Convert XML to ggPlantmap format
+tryCatch({
+  roi_data <- icy_to_ggplantmap(input_xml)
+}, error = function(e) {
+  stop(paste("Conversion failed:", e$message), call. = FALSE)
+})
+
+# Display summary
+cat("\nROI Summary:\n")
+roi_summary <- roi_data %>%
+  group_by(ROI.name) %>%
+  summarize(
+    points = n(),
+    x_range = paste(round(min(x), 1), "-", round(max(x), 1)),
+    y_range = paste(round(min(y), 1), "-", round(max(y), 1)),
+    .groups = "drop"
+  )
+print(roi_summary)
 
 # ============================================
-# PLOT 1: UMAP BY CELL TYPE (DETAILED)
+# CONVERT TO SVG
 # ============================================
 
-ggplot(umap_data, aes(x = UMAP1, y = UMAP2, color = cell_type_detailed)) +
-  geom_point(size = 0.5, alpha = 0.6) +
-  theme_minimal() +
-  labs(
-    title = "UMAP colored by Cell Type",
-    x = "UMAP 1",
-    y = "UMAP 2",
-    color = "Cell Type"
-  ) +
-  theme(
-    legend.position = "right",
-    legend.text = element_text(size = 8)
+cat("\nGenerating SVG...\n")
+
+tryCatch({
+  ggPlantmap.to.SVG(
+    roi_data,
+    group.name = "ROI.name",
+    author = author,
+    svg.name = output_svg
   )
 
-# ============================================
-# PLOT 2: UMAP BY MAJOR CELL TYPE (SIMPLER)
-# ============================================
+  cat("\n✓ Successfully saved SVG to:", output_svg, "\n")
 
-ggplot(umap_data, aes(x = UMAP1, y = UMAP2, color = cell_type_major)) +
-  geom_point(size = 0.5, alpha = 0.6) +
-  theme_minimal() +
-  labs(
-    title = "UMAP colored by Major Cell Type",
-    x = "UMAP 1",
-    y = "UMAP 2",
-    color = "Major Cell Type"
-  )
+  # Verify output file was created
+  if (file.exists(output_svg)) {
+    file_size <- file.info(output_svg)$size
+    cat("  File size:", format(file_size, big.mark = ","), "bytes\n")
+  } else {
+    warning("Output file was not created successfully")
+  }
 
-# ============================================
-# PLOT 3: UMAP BY SRC2 EXPRESSION
-# ============================================
+}, error = function(e) {
+  stop(paste("SVG generation failed:", e$message), call. = FALSE)
+})
 
-ggplot(umap_data, aes(x = UMAP1, y = UMAP2, color = SRC2_expression)) +
-  geom_point(size = 0.5, alpha = 0.6) +
-  scale_color_gradient2(
-    low = "blue",
-    mid = "lightgray",
-    high = "red",
-    midpoint = median(umap_data$SRC2_expression, na.rm = TRUE)
-  ) +
-  theme_minimal() +
-  labs(
-    title = "UMAP colored by SRC2 Expression",
-    x = "UMAP 1",
-    y = "UMAP 2",
-    color = "SRC2 Expression"
-  )
-
-# ============================================
-# ALTERNATIVE: VIRIDIS COLOR SCALE FOR SRC2
-# ============================================
-
-ggplot(umap_data, aes(x = UMAP1, y = UMAP2, color = SRC2_expression)) +
-  geom_point(size = 0.5, alpha = 0.6) +
-  scale_color_viridis_c(option = "plasma") +
-  theme_minimal() +
-  labs(
-    title = "UMAP colored by SRC2 Expression (Viridis)",
-    x = "UMAP 1",
-    y = "UMAP 2",
-    color = "SRC2 Expression"
-  )
-
-
-
-
-
-
-
-
+cat("\n============================================================\n")
+cat("Conversion complete!\n")
+cat("============================================================\n\n")

@@ -1,11 +1,29 @@
-#!/usr/bin/env python3
 """
 SVG to XML Coordinate Extractor
+
 Reads an XML file with empty coords attributes and fills them based on SVG layout.
+
+Usage:
+    python get_coordinates.py <input_xml> <output_xml> [--scale SCALE]
+
+Arguments:
+    input_xml   : Path to input XML file with empty coords attributes
+    output_xml  : Path to output XML file with filled coords
+
+Options:
+    --scale     : Scale factor for coordinates (default: 0.3)
+
+Examples:
+    # Basic usage
+    python get_coordinates.py merged_grid.xml merged_grid_coords.xml
+
+    # Custom scale factor
+    python get_coordinates.py input.xml output.xml --scale 0.5
 """
 
-import re
 import sys
+import os
+import argparse
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
@@ -32,9 +50,12 @@ def calculate_bbox(base_x_min, base_y_min, base_x_max, base_y_max, translate_x, 
     return f"{x_min:.0f},{y_min:.0f},{x_max:.0f},{y_min:.0f},{x_max:.0f},{y_max:.0f},{x_min:.0f},{y_max:.0f}"
 
 
-def generate_coordinates():
+def generate_coordinates(scale=0.3):
     """
     Generate all coordinates based on SVG layout.
+
+    Args:
+        scale: Scale factor for coordinates
 
     Returns:
         Dictionary mapping tissue_id to coordinate string
@@ -82,7 +103,7 @@ def generate_coordinates():
 
             # Generate coordinates
             coords = calculate_bbox(base_x_min, base_y_min, base_x_max, base_y_max,
-                                    translate_x, translate_y)
+                                    translate_x, translate_y, scale)
 
             tissue_id = f"{cell_type}_{position_name}"
             coordinates[tissue_id] = coords
@@ -99,16 +120,20 @@ def prettify_xml(elem):
     return reparsed.toprettyxml(indent="\t", encoding='utf-8').decode('utf-8')
 
 
-def fill_coordinates(input_file, output_file):
+def fill_coordinates(input_file, output_file, scale=0.3):
     """
     Read XML file, fill in empty coords attributes, and write to output file.
 
     Args:
         input_file: Path to input XML file with empty coords
         output_file: Path to output XML file with filled coords
+        scale: Scale factor for coordinates
     """
+    print(f"Loading XML from: {input_file}")
+
     # Generate all coordinates
-    coordinates = generate_coordinates()
+    coordinates = generate_coordinates(scale)
+    print(f"Generated {len(coordinates)} coordinate sets with scale factor {scale}")
 
     # Parse the input XML file
     tree = ET.parse(input_file)
@@ -127,48 +152,72 @@ def fill_coordinates(input_file, output_file):
             if area is not None:
                 area.set('coords', coordinates[tissue_id])
                 tissues_updated += 1
-                print(f"Updated {tissue_id}: {coordinates[tissue_id]}")
+                print(f"  Updated {tissue_id}: {coordinates[tissue_id]}")
             else:
-                print(f"Warning: No <area> element found for {tissue_id}")
+                print(f"  Warning: No <area> element found for {tissue_id}")
         else:
             tissues_not_found.append(tissue_id)
-            print(f"Warning: No coordinates generated for {tissue_id}")
+            print(f"  Warning: No coordinates generated for {tissue_id}")
 
     # Write the updated XML to output file
-    # First convert to string with pretty printing
+    print(f"\nWriting output to: {output_file}")
     xml_string = prettify_xml(root)
 
-    # Write to file
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(xml_string)
 
     # Print summary
     print(f"\n{'=' * 60}")
     print(f"Summary:")
-    print(f"  Tissues updated: {tissues_updated}")
+    print(f"  Input file:       {input_file}")
+    print(f"  Output file:      {output_file}")
+    print(f"  Scale factor:     {scale}")
+    print(f"  Tissues updated:  {tissues_updated}")
     if tissues_not_found:
         print(f"  Tissues not found: {len(tissues_not_found)}")
         for tid in tissues_not_found:
             print(f"    - {tid}")
-    print(f"  Output written to: {output_file}")
     print(f"{'=' * 60}")
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description='Fill coordinate attributes in XML based on SVG layout',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__
+    )
 
-    input_file = "merged_grid.xml"
-    output_file = "merged_grid_coords.xml"
+    parser.add_argument('input_xml', help='Path to input XML file with empty coords')
+    parser.add_argument('output_xml', help='Path to output XML file with filled coords')
+    parser.add_argument('--scale', type=float, default=0.3, help='Scale factor for coordinates (default: 0.3)')
+
+    args = parser.parse_args()
+
+    # Validate input file
+    if not os.path.exists(args.input_xml):
+        print(f"Error: Input file '{args.input_xml}' not found")
+        sys.exit(1)
+
+    print("=" * 60)
+    print("SVG to XML Coordinate Extractor")
+    print("=" * 60)
+    print(f"Input:  {args.input_xml}")
+    print(f"Output: {args.output_xml}")
+    print(f"Scale:  {args.scale}")
+    print("=" * 60)
+    print()
 
     try:
-        fill_coordinates(input_file, output_file)
+        fill_coordinates(args.input_xml, args.output_xml, args.scale)
+        print("\n✓ Done!")
     except FileNotFoundError:
-        print(f"Error: Input file '{input_file}' not found")
+        print(f"\nError: Input file '{args.input_xml}' not found")
         sys.exit(1)
     except ET.ParseError as e:
-        print(f"Error: Failed to parse XML file: {e}")
+        print(f"\nError: Failed to parse XML file: {e}")
         sys.exit(1)
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"\nError: {e}")
         sys.exit(1)
 
 
