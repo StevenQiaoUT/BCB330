@@ -115,33 +115,80 @@ This setup has been tested with:
 ## Project Structure
 ```
 BCB330/
-├── **h5ad_pipeline/**
-│   ├── h5ad_to_json.py
-│   ├── h5ad_viewer_ad.r
-│   ├── h5ad_viewer_bc.r
-│   ├── umap.py
-│   ├── **conversion_pipeline/**
-│   │   ├── fourbythree.py
-│   │   ├── get_coordinates.py
-│   │   ├── gg_to_eplant_ungrouped.py
-│   │   ├── group.py
-│   │   ├── combine.py
-│   |── **svg_generation/**
-│   │   ├── icy_xml_to_ggplantmap_svg.r
-│   │   ├── merged_grid.svg
-│   │   ├── merged_grid.xml
-│   │   ├── merged_grid_coords.xml
-│   │   ├── eplant_config_with_coords.xml
-│   │   ├── conditioned/
-│   │   ├── icy_outputs/
-│   │   └── intermediates/
-├── .Rproj.user/
-├── .gitignore
 ├── BCB330 Proposal - Steven Qiao.pdf
-├── ePlant SVG and Expression Data Guide.pdf
 ├── README.md
+├── app
+│   └── mini_app.py
+├── ePlant SVG and Expression Data Guide.pdf
+├── pipeline
+│   ├── 1_svg_generation
+│   │   ├── conditioned
+│   │   │   ├── D0_epidermal.svg
+│   │   │   ├── D0_guard.svg
+│   │   │   ├── D0_palisade.svg
+│   │   │   ├── D0_spongy.svg
+│   │   │   ├── D0_trichome.svg
+│   │   │   ├── D0_vascular.svg
+│   │   │   ├── R15_epidermal.svg
+│   │   │   ├── R15_guard.svg
+│   │   │   ├── R15_palisade.svg
+│   │   │   ├── R15_spongy.svg
+│   │   │   ├── R15_trichome.svg
+│   │   │   ├── R15_vascular.svg
+│   │   │   ├── W0_epidermal.svg
+│   │   │   ├── W0_guard.svg
+│   │   │   ├── W0_palisade.svg
+│   │   │   ├── W0_spongy.svg
+│   │   │   ├── W0_trichome.svg
+│   │   │   ├── W0_vascular.svg
+│   │   │   ├── W15_epidermal.svg
+│   │   │   ├── W15_guard.svg
+│   │   │   ├── W15_palisade.svg
+│   │   │   ├── W15_spongy.svg
+│   │   │   ├── W15_trichome.svg
+│   │   │   └── W15_vascular.svg
+│   │   ├── icy_outputs
+│   │   │   ├── epidermal_cell.xml
+│   │   │   ├── guard_cell.xml
+│   │   │   ├── palisade.xml
+│   │   │   ├── spongy.xml
+│   │   │   ├── trichome.xml
+│   │   │   └── vascular.xml
+│   │   ├── icy_xml_to_ggplantmap_svg.r
+│   │   └── intermediates
+│   │       ├── epidermal_cell_eplant_format.svg
+│   │       ├── epidermal_cell_output.svg
+│   │       ├── guard_cell_eplant_format.svg
+│   │       ├── guard_cell_output.svg
+│   │       ├── palisade_eplant_format.svg
+│   │       ├── palisade_output.svg
+│   │       ├── spongy_eplant_format.svg
+│   │       ├── spongy_output.svg
+│   │       ├── trichome_eplant_format.svg
+│   │       ├── trichome_output.svg
+│   │       ├── vascular_eplant_format.svg
+│   │       └── vascular_output.svg
+│   ├── 2_coordinate_extraction
+│   │   ├── get_coordinates.py
+│   │   └── merged_grid_coords.xml
+│   ├── 3_grid_assembly
+│   │   ├── color.py
+│   │   ├── combine.py
+│   │   ├── fourbythree.py
+│   │   ├── gg_to_eplant_ungrouped.py
+│   │   ├── group.py
+│   │   ├── merged_grid.xml
+│   │   ├── new_grid.svg
+│   │   └── output.svg
+│   ├── 4_h5ad_processing
+│   │   ├── h5ad_to_json.py
+│   │   ├── h5ad_viewer_ad.r
+│   │   ├── h5ad_viewer_bc.r
+│   │   └── umap.py
+│   └── eplant_config_with_coords.xml
 ├── requirements.txt
 └── timer.r
+
 ```
 
 ## Usage
