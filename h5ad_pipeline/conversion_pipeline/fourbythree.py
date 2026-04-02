@@ -18,8 +18,8 @@ Arguments:
 Options:
     --cols         : Number of columns (timepoints) (default: 4)
     --cell-width   : Width of each grid cell in pixels (default: 400)
-    --cell-height  : Height of each grid cell in pixels (default: 300)
-    --spacing      : Space between cells in pixels (default: 50)
+    --cell-height  : Height of each grid cell in pixels (default: 200)
+    --spacing      : Space between cells in pixels (default: 20)
 
 Examples:
     # Basic usage with default settings
@@ -29,7 +29,7 @@ Examples:
     python fourbythree.py conditioned/ output.svg --cell-width 500 --cell-height 400
 
     # Full custom configuration
-    python fourbythree.py data/ grid.svg --cols 4 --cell-width 400 --cell-height 300 --spacing 50
+    python fourbythree.py data/ grid.svg --cols 4 --cell-width 400 --cell-height 200 --spacing 10
 """
 
 import sys
@@ -40,7 +40,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
-def create_composite_tissue_grid(svg_files_dict, output_file, cols=4, cell_width=400, cell_height=300, spacing=50):
+def create_composite_tissue_grid(svg_files_dict, output_file, cols=4, cell_width=400, cell_height=200, spacing=20):
     """
     Create a 4×3 grid where each cell contains multiple cell types grouped by tissue category.
 
@@ -81,10 +81,10 @@ def create_composite_tissue_grid(svg_files_dict, output_file, cols=4, cell_width
         },
         'mesophyll': {
             'palisade': {'x': 50, 'scale': 1.3},
-            'spongy': {'x': 220, 'scale': 1.3}
+            'spongy': {'x': 180, 'scale': 1.3}  # Reduced from 220 to 180
         },
         'vascular': {
-            'vascular': {'x': 100, 'scale': 0.4}
+            'vascular': {'x': 40, 'scale': 0.4}
         }
     }
 
@@ -103,12 +103,6 @@ def create_composite_tissue_grid(svg_files_dict, output_file, cols=4, cell_width
             svg_content.append(
                 f'  <g id="{tissue_category}_{timepoint}" '
                 f'transform="translate({grid_x}, {grid_y})">'
-            )
-
-            # Add a background rectangle for visualization
-            svg_content.append(
-                f'    <rect x="0" y="0" width="{cell_width}" height="{cell_height}" '
-                f'fill="none" stroke="#4a4a4a" stroke-width="1" stroke-dasharray="5,5"/>'
             )
 
             # Add label for this cell
@@ -131,7 +125,7 @@ def create_composite_tissue_grid(svg_files_dict, output_file, cols=4, cell_width
                         pos_info = cell_type_positions[tissue_category][cell_type]
                         cell_x = pos_info['x']
                         cell_scale = pos_info['scale']
-                        cell_y = 50  # Vertical offset from top of cell
+                        cell_y = 30  # Reduced vertical offset from top of cell
 
                         # Read SVG content
                         with open(svg_file, 'r', encoding='utf-8') as f:
@@ -154,6 +148,55 @@ def create_composite_tissue_grid(svg_files_dict, output_file, cols=4, cell_width
                         )
                         svg_content.append(content.strip())
                         svg_content.append('    </g>')
+
+                        # Add circles for vascular cells
+                        if tissue_category in ['vascular']:
+                            circle_radius = 30
+                            gap = 15  # gap between circle edges
+                            label_font = 'font-family="Arial" font-size="9" text-anchor="middle"'
+
+                            # Cluster anchor: centered in right half of cell
+                            cluster_cx = cell_width - 80
+                            cluster_top_y = cell_y + 28
+
+                            # --- Vascular circle (top, centred) ---
+                            vc_x = cluster_cx
+                            vc_y = cluster_top_y
+                            svg_content.append(
+                                f'    <circle id="vascular_{timepoint}" cx="{vc_x}" cy="{vc_y}" r="{circle_radius}" '
+                                f'fill="none" stroke="#4a4a4a" stroke-width="1"/>'
+                            )
+                            svg_content.append(
+                                f'    <text x="{vc_x}" y="{vc_y - circle_radius - 5}" {label_font} fill="#4a4a4a">'
+                                f'vascular</text>'
+                            )
+
+                            # Bottom row y: below top circle with a gap
+                            bottom_y = vc_y + circle_radius * 2 + gap
+
+                            # --- Phloem Parenchyma circle (bottom-left) ---
+                            pp_x = cluster_cx - circle_radius - gap // 2
+                            pp_y = bottom_y
+                            svg_content.append(
+                                f'    <circle id="phloem_parenchyma_{timepoint}" cx="{pp_x}" cy="{pp_y}" r="{circle_radius}" '
+                                f'fill="none" stroke="#4a4a4a" stroke-width="1"/>'
+                            )
+                            svg_content.append(
+                                f'    <text x="{pp_x}" y="{pp_y + circle_radius + 12}" {label_font} fill="#4a4a4a">'
+                                f'phloem parenchyma</text>'
+                            )
+
+                            # --- Phloem Companion circle (bottom-right) ---
+                            pc_x = cluster_cx + circle_radius + gap // 2
+                            pc_y = bottom_y
+                            svg_content.append(
+                                f'    <circle id="phloem_companion_{timepoint}" cx="{pc_x}" cy="{pc_y}" r="{circle_radius}" '
+                                f'fill="none" stroke="#4a4a4a" stroke-width="1"/>'
+                            )
+                            svg_content.append(
+                                f'    <text x="{pc_x}" y="{pc_y + circle_radius + 12}" {label_font} fill="#4a4a4a">'
+                                f'companion</text>'
+                            )
                     else:
                         print(f'Warning: {svg_file} not found')
                 else:
@@ -187,8 +230,8 @@ def main():
     parser.add_argument('output_file', help='Path to output merged SVG file')
     parser.add_argument('--cols', type=int, default=4, help='Number of columns (default: 4)')
     parser.add_argument('--cell-width', type=int, default=400, help='Width of each grid cell (default: 400)')
-    parser.add_argument('--cell-height', type=int, default=300, help='Height of each grid cell (default: 300)')
-    parser.add_argument('--spacing', type=int, default=50, help='Space between cells (default: 50)')
+    parser.add_argument('--cell-height', type=int, default=200, help='Height of each grid cell (default: 200)')
+    parser.add_argument('--spacing', type=int, default=20, help='Space between cells (default: 20)')
 
     args = parser.parse_args()
 
