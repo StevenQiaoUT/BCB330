@@ -136,23 +136,16 @@ BCB330/
 The main application is `main_app/mini_app.py`, deployed as a CGI script on the BAR development server:
 
 ```
-http://142.150.215.219/~sqiao/cgi-bin/mini_app.py?file=/mnt/home/sqiao/Natanella_integrated_object.h5ad&col=label_majorXcondition&gene=AT3G05727&svg=svg_template.svg
+http://142.150.215.219/~sqiao/cgi-bin/main_app/mini_app.py?ds=allcells&col=label_majorXcondition&gene=AT1G75260
 ```
 
 **Query Parameters:**
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
-| `file` | Absolute path to `.h5ad` file | `/mnt/home/sqiao/Natanella_integrated_object.h5ad` |
+| `ds` | h5ad dataset name | `allcells` |
 | `col` | Cell type metadata column | `label_majorXcondition` |
 | `gene` | Arabidopsis gene ID | `AT3G05727` |
-| `svg` | SVG template filename | `svg_template.svg` |
-
-**Deploy to bardev:**
-```bash
-scp -P 12345 -i ~/.ssh/id_ed25519 app/mini_app.py sqiao@142.150.215.219:/mnt/home/sqiao/public_html/cgi-bin/
-ssh -p 12345 sqiao@142.150.215.219 "chmod 755 /mnt/home/sqiao/public_html/cgi-bin/mini_app.py"
-```
 
 ### H5AD Processing
 
@@ -185,7 +178,7 @@ Visit [https://icy.bioimageanalysis.org/](https://icy.bioimageanalysis.org/) and
 
 ### Step 2: ICY XML → ggPlantmap SVG
 
-```r
+```
 Rscript pipeline/1_svg_generation/icy_xml_to_ggplantmap_svg.r vascular.xml vascular_output.svg
 ```
 
@@ -244,15 +237,15 @@ Extracts SVG path coordinates for generating the ePlant XML configuration file.
 ### Conditions
 | Code | Meaning |
 |------|---------|
-| `W0` | Well-watered control |
-| `D0` | Drought stress |
-| `R15` | Drought recovery (15 min after rewatering) |
+| `W0` | Well-watered |
+| `D0` | Moderate drought at 30% soil water content |
+| `R15` | Recovery for 15 min following rewatering  |
 | `W15` | Well-watered, irrigated 15 min |
 
 ### Cell Types
 | Code | Cell Type |
 |------|-----------|
-| `guard` | Guard cells (stomata) |
+| `guard` | Guard cells |
 | `epidermal` | Epidermal cells |
 | `trichome` | Trichome cells |
 | `palisade` | Palisade mesophyll |
@@ -267,13 +260,13 @@ Example: `W0_guard.svg`, `R15_palisade.svg`
 ## Output
 
 ### Composite Grid SVG
-- **File**: `pipeline/3_grid_assembly/merged_grid.svg`
-- **Layout**: 4 columns (W0, D0, R15, W15) × 6 rows (guard, epidermal, trichome, palisade, spongy, vascular)
+- **File**: `pipeline/3_grid_assembly/new_grid.svg`
+- **Layout**: 4 columns (W0, D0, R15, W15) × 3 rows (guard, epidermal, trichome, palisade, spongy, vascular)
 
 ### Interactive eFP + UMAP Viewer
-- Served via Apache CGI at `http://142.150.215.219/~sqiao/cgi-bin/mini_app.py`
-- Left panel: ePlant-style SVG colored by average gene expression per cell type
-- Right panel: Interactive Plotly UMAP with cell-type dropdown and expression overlay
+- Served via Apache CGI at `http://142.150.215.219/~sqiao/cgi-bin/main_app/mini_app.py`
+- Upper panel: ePlant-style SVG colored by average gene expression per cell type
+- Lower panel: Interactive Plotly UMAP with cell-type dropdown and expression overlay
 - Includes gene search bar with Arabidopsis gene ID validation
 
 ### JSON Expression Data
@@ -306,7 +299,7 @@ Install the HDF5 system library before Python packages (see Step 1 of Installati
 Check available genes in your H5AD file. The viewer defaults to `AT3G05727` if no gene is specified.
 
 **Apache CGI timeout**
-For large H5AD files, precompute expression averages and cache them. The current deployment uses `Natanella_integrated_object.h5ad` (~144k cells).
+For large H5AD files, precompute expression averages and cache them. The current deployment uses `allcells.h5ad` (~144k cells).
 
 ## Data Source
 
@@ -317,6 +310,7 @@ Adapted from Dr. Natanella Illouz-Eliaz's publication: "Drought recovery in plan
 - ggPlantmap ICY guide: [https://github.com/leonardojo/ggPlantmap/blob/main/guides/TutorialforXMLfile.pdf](https://github.com/leonardojo/ggPlantmap/blob/main/guides/TutorialforXMLfile.pdf)
 - ePlant / BAR: [https://bar.utoronto.ca](https://bar.utoronto.ca)
 - ICY bioimage analysis: [https://icy.bioimageanalysis.org/](https://icy.bioimageanalysis.org/)
+- Dr. Natanella Illouz-Eliaz's publication: https://www.nature.com/articles/s41467-025-63467-2
 
 ## License
 
@@ -327,3 +321,4 @@ MIT License
 Steven Qiao — University of Toronto
 - Course: BCB330Y (Bioinformatics and Computational Biology Research)
 - Lab: Provart Lab, Department of Cell & Systems Biology
+- Email: steven.qiao@mail.utoronto.ca
