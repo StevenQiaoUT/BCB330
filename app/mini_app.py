@@ -38,15 +38,15 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 DATASETS = {
     "allcells": {
         "label":    "All Cells",
-        "h5ad":     "/mnt/home/sqiao/allcells.h5ad",
-        "svg":      "svg_template.svg",
+        "h5ad":     "/mnt/home/sqiao/h5ad_files/allcells.h5ad",
+        "svg":      "/mnt/home/sqiao/public_html/cgi-bin/svg_templates/svg_template.svg",
         "umap_col": "label_major",
         "opacity":  1.0,
     },
     "selectcells": {
         "label":    "Select Cells",
-        "h5ad":     "/mnt/home/sqiao/selectedcells.h5ad",
-        "svg":      "svg_template.svg",
+        "h5ad":     "/mnt/home/sqiao/h5ad_files/selectedcells.h5ad",
+        "svg":      "/mnt/home/sqiao/public_html/cgi-bin/svg_templates/svg_template.svg",
         "umap_col": "label_major",
         "opacity":  1.0,
     },
