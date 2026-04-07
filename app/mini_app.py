@@ -59,7 +59,7 @@ COLUMNS = {
 }
 
 DEFAULT_DATASET = "allcells"
-DEFAULT_GENE    = "AT3G05727"
+DEFAULT_GENE    = "SZF1"
 DEFAULT_COLUMN  = "label_majorXcondition"
 
 
@@ -431,16 +431,56 @@ def load_all(h5ad_path, cell_type_column, gene_list, umap_col='label_major'):
             f"Column '{cell_type_column}' not found. Available: {list(adata.obs.columns)}"
         )
 
-    missing = [g for g in gene_list if g not in adata.var_names]
-    if missing:
-        print(f"Warning: genes not found: {missing}", file=sys.stderr)
+    # ── gene alias resolution ──────────────────────────────────────────────
+    # Build two-way lookup: symbol ↔ TAIR ID
+    tair_col = None
+    for candidate in ("TAIR_ID", "tair_id", "gene_id"):
+        if candidate in adata.var.columns:
+            tair_col = candidate
+            break
 
-    gene_list = [g for g in gene_list if g in adata.var_names]
-    if not gene_list:
+    sym_to_tair = {}
+    tair_to_sym = {}
+    if tair_col:
+        for sym, tair in zip(adata.var_names, adata.var[tair_col]):
+            if isinstance(tair, str) and tair:
+                sym_to_tair[sym.upper()]  = tair.upper()
+                tair_to_sym[tair.upper()] = sym
+        print(f"  Alias column found: '{tair_col}' ({len(sym_to_tair)} mappings)", file=sys.stderr)
+    else:
+        print("  No TAIR_ID alias column found — symbol-only lookup", file=sys.stderr)
+
+    # Resolve each input query to an actual var_name
+    var_names_upper = {v.upper(): v for v in adata.var_names}
+
+    def resolve(query):
+        q = query.strip().upper()
+        if q in var_names_upper:
+            return var_names_upper[q]
+        if q in tair_to_sym:
+            return tair_to_sym[q]
+        return None
+
+    resolved = []
+    for g in gene_list:
+        r = resolve(g)
+        if r:
+            resolved.append(r)
+        else:
+            print(f"Warning: '{g}' not found by symbol or TAIR ID", file=sys.stderr)
+
+    if not resolved:
         raise ValueError("No valid genes found in dataset.")
 
-    gene = gene_list[0]
+    gene = resolved[0]
     print(f"  Gene: {gene}", file=sys.stderr)
+
+    # Build display name: "SYMBOL/TAIR_ID" (or just symbol if no alias / same string)
+    tair_id = sym_to_tair.get(gene.upper(), "")
+    if tair_id and tair_id.upper() != gene.upper():
+        display_name = f"{gene}/{tair_id}"
+    else:
+        display_name = gene
 
     gene_idx = adata.var_names.get_loc(gene)
     X_col = adata.X[:, gene_idx]
@@ -504,7 +544,7 @@ def load_all(h5ad_path, cell_type_column, gene_list, umap_col='label_major'):
         print("  Warning: X_umap not found — UMAP panel will be skipped", file=sys.stderr)
 
     print(f"  Final UMAP dataframe size: {len(umap_data) if umap_data is not None else 0:,}", file=sys.stderr)
-    return expression_dict, gene, umap_data
+    return expression_dict, display_name, umap_data
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -558,8 +598,8 @@ def build_umap_div(umap_df, gene_name):
             mode='markers',
             marker=dict(
                 size=6,
-                color='red',
-                line=dict(width=0.5, color='black'),
+                color='#1a6fcc',
+                line=dict(width=0.5, color='#0a3d6b'),
                 opacity=1.0
             ),
             customdata=np.column_stack([labels_all[ct_mask], expr_all[ct_mask]]),
@@ -834,7 +874,7 @@ def build_html(svg_string, umap_div, gene_name, active_ds_key, active_col):
                     type="text"
                     id="gene-input"
                     name="gene"
-                    value="{gene_name}"
+                    value="{gene_name.split('/')[0]}"
                     placeholder="e.g. AT3G05727"
                     spellcheck="false"
                     autocomplete="off"
@@ -855,36 +895,6 @@ def build_html(svg_string, umap_div, gene_name, active_ds_key, active_col):
         {umap_section}
     </div>
 
-    <script>
-        const GENE_RE = /^AT[1-5MC]G\\d{{5}}(\\.\\d+)?$/i;
-
-        function validateGene() {{
-            const input = document.getElementById('gene-input');
-            const val   = input.value.trim();
-            if (!val) {{
-                input.classList.add('invalid');
-                input.focus();
-                return false;
-            }}
-            if (!GENE_RE.test(val)) {{
-                const ok = confirm(
-                    `"${{val}}" doesn't look like a standard Arabidopsis gene ID (e.g. AT3G05727).\\n\\nSearch anyway?`
-                );
-                if (!ok) {{
-                    input.classList.add('invalid');
-                    input.focus();
-                    return false;
-                }}
-            }}
-            input.classList.remove('invalid');
-            input.value = val.toUpperCase();
-            return true;
-        }}
-
-        document.getElementById('gene-input').addEventListener('input', function () {{
-            this.classList.remove('invalid');
-        }});
-    </script>
 </body>
 </html>"""
 
